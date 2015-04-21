@@ -156,6 +156,7 @@ class TGARunLengthEncoder
 		switch ($this->fileHeader->getImageTypeCode())
 		{
 			case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB:
+			case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE:
 				if (!$encode)
 				{
 					throw new Exception("$fileName is already decoded\n");
@@ -165,7 +166,9 @@ class TGARunLengthEncoder
 					$this->encodeTga();
 				}
 				break;
+		
 			case TGAHeader::IMAGE_TYPE_RLE_RGB:
+			case TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE:
 			
 				if ($encode)
 				{
@@ -186,8 +189,20 @@ class TGARunLengthEncoder
 		
 		$newHeader = new TGAHeader($this->fileHeader->getHeaderData());
 		
-		// Set the image type to compressed RGB. Assumes we are converting from uncompressed RBG
-		$newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_RGB);
+		switch ($this->fileHeader->getImageTypeCode())
+		{
+		    case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB:
+		        // Set the image type to compressed RGB.
+		        $newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_RGB);
+		        break;
+		        
+		    case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE:
+		        // Set the image type to compressed black and white.
+		        $newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE);
+		        break;
+		    default:
+		        throw new Exception("No suitable unencoded image type in header");
+		}
 		
 		$pixelDepth = $this->fileHeader->getBytePixelDepth();
 		
@@ -315,8 +330,20 @@ class TGARunLengthEncoder
 		
 		$newHeader = new TGAHeader($this->fileHeader->getHeaderData());
 		
-		// Set the image type to uncompressed RGB. Assumes we are converting from compressed RBG
-		$newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB);
+		switch ($this->fileHeader->getImageTypeCode())
+		{
+		    case TGAHeader::IMAGE_TYPE_RLE_RGB:
+		        // Set the image type to uncompressed RGB.
+		        $newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB);
+		        break;
+		    case TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE:
+		        // Set the image type to uncompressed black and white.
+		        $newHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE);
+		        break;
+		    default:
+		        throw new Exception("No suitable encoded image type in header");
+		        return;
+		}
 		
 		$pixelDepth = $this->fileHeader->getBytePixelDepth();
 		
