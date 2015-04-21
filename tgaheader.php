@@ -38,6 +38,9 @@ class TGAHeader
 
 	// 10 - Runlength encoded RGB images.
 	const IMAGE_TYPE_RLE_RGB = 10;
+	
+	// 11 - Runlength encoded, black and white images.
+	const IMAGE_TYPE_RLE_BLACK_AND_WHITE = 11;
 
 	// 32 - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
 	const IMAGE_TYPE_HD_RLE_COLOR_MAPPED = 32;
