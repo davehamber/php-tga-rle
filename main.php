@@ -6,10 +6,109 @@ include 'tgarle.php';
 
 use DaveHamber\ImageFormats\TGA\TGAHeader;
 use DaveHamber\ImageFormats\TGA\TGARunLengthEncoder;
+use DaveHamber\ImageFormats\TGA\DaveHamber\ImageFormats\TGA;
 
 main();
 
 function main()
+{
+    global $argv;
+    
+    switch (count($argv))
+    {
+        case 1:
+        case 2:
+            print commandHelp();
+            var_dump($argv);
+            exit(0);    
+    }
+    
+    $option = $argv[1];
+    $file = $argv[2];
+    
+    $encoder = new TGARunLengthEncoder();
+    
+    switch ($option)
+    {
+        case '-e':
+            $encoder->encodeFile($file);
+
+            break;
+        case '-d':
+            $encoder->decodeFile($file);
+            break;
+
+        case '-E':
+//             $encoder->deco
+            break;
+
+        case '-D':
+            $encode	= false;
+            $wholeDirectory = true;
+            break;
+
+        default:
+            print commandHelp();
+                        
+                
+            exit(0);
+    }
+}
+
+function commandHelp()
+{
+    return
+        formatUsage("php tgarle.phar [OPTION] [FILE]") .
+        formatDescription("Encodes or decodes TGA 1 and TGA 2 runlength encoded images which are either RBG, Grayscale or Color Mapped.") .
+        formatOption("Encode a single TGA file from its uncompressed form.", "e", "encode") .
+        formatOption("Decode a single TGA file from its compressed form.", "d", "decode") .
+        formatOption("Encode TGA files in the given directory.", "E", "encodedir") .
+        formatOption("Decode TGA files in the given directory.", "D", "decodedir") . "\n";
+}
+
+function formatUsage($usage)
+{
+    return wordwrap("Usage: " . $usage, 80) . "\n";
+}
+
+function formatDescription($description)
+{
+    return wordwrap($description, 80) . "\n\n";
+}
+
+function formatOption($description, $shortOption, $longOption = "")
+{
+    $descriptionLines = explode("\n", wordwrap($description, 51));
+    
+    if ($longOption == "")
+    {
+        $option = sprintf("  -%1.1s,%-24s%-51s\n", $shortOption, "", $descriptionLines[0]);
+    }
+    else
+    {
+        if (strlen($longOption) > 19)
+        {
+            $option = sprintf("  -%1.1s, --%-72s\n%-29s%-51s\n", $shortOption, $longOption, "", $descriptionLines[0]);
+        }
+        else
+        {
+            $option = sprintf("  -%1.1s, --%-21s%-51s\n", $shortOption, $longOption, $descriptionLines[0]);
+        }
+    }
+
+    if (count($descriptionLines) > 1)
+    {
+        for ($i = 1; $i < count($descriptionLines); $i++)
+        {
+            $option .= sprintf("%-29s%-51s\n", "", $descriptionLines[$i]);
+        }
+    }
+    
+    return $option;
+}
+
+
+function test()
 {
 	// 32 x 32 RGB RLE encoded with alpha channel. Image is black text on white background with the word "TEST"
 	$testImageData =
@@ -28,53 +127,25 @@ function main()
 	"/5//////n/////+f/////5//////n/////+f/////5//////AAAAAAAAAABUUlVFVklTSU9OLVh" .
 	"GSUxFLgA=";
 
-	$testImageName = "test.encoded.tga";
+// 	$testImageName = "test.encoded.tga";
+// 	$testImageName = "test-grayscale.encoded.tga";
 
-	file_put_contents($testImageName, base64_decode($testImageData));
+// 	file_put_contents($testImageName, base64_decode($testImageData));
 
-	$encoder = new TGARunLengthEncoder();
+// 	$encoder = new TGARunLengthEncoder();
 
-	//$encoder->setFileName($testImageName);
-	//$encoder->decodeFile();
+// 	$encoder->setFileName($testImageName);
+// 	$encoder->decodeFile();
 
-	$encoder->encodeFile("test.decoded.tga");
+// 	$encoder->encodeFile("test-grayscale.decoded.tga");
+
+	$h = fopen("test.index.decoded.tga", "r");
+	$header = new TGAHeader(fread($h, 18));
+	fclose($h);
+	
+	print $header->__toString();
+	
+	
 }
 
-/*
- function main($conversionMode, $fileName)
- {
-
- switch ($conversionMode)
- {
- case '-e':
- $encode	= true;
- $wholeDirectory = false;
- CheckFile($fileName);
-
- break;
- case '-d':
- $encode = false;
- $wholeDirectory	= false;
- checkFile($fileName);
- break;
-
- case '-ed':
- $encode	= true;
- $wholeDirectory = true;
- break;
-
- case '-dd':
- $encode	= false;
- $wholeDirectory = true;
- break;
-
- default:
- print "usage: php tgarle.php <-e|-d|-ed|-dd> [filename]\n";
- exit(0);
- }
-
-
- }
- */
- 
 ?>
