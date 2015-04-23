@@ -6,6 +6,8 @@ use \Exception;
 class TGAHeader
 {
 	const TGA_HEADER_SIZE = 18;
+	const TGA_FOOTER_SIZE = 26;
+	const TGA_FOOTER_SIGNATURE = "TRUEVISION-XFILE.\0"; 
 	const BYTE = 8;
 
 	const ID_LENGTH = 0;		/* 00h Byte - Size of Image ID field */
@@ -100,7 +102,7 @@ class TGAHeader
 
 	public function getColorMapStart()
 	{
-		return $this->getWord(self::C_MAP_LENGTH);
+		return $this->getWord(self::C_MAP_START);
 	}
 
 	public function getColorMapLength()
@@ -162,7 +164,7 @@ class TGAHeader
 
 	public function getColorMapByteDepth()
 	{
-		return ceil($this->getColorMapDepth() / self::BYTE);
+		return (int)ceil($this->getColorMapDepth() / self::BYTE);
 	}
 
 	public function getColorMapByteSize()
@@ -180,6 +182,25 @@ class TGAHeader
 		{
 			$offset += $this->getColorMapByteSize();
 		}
+		
+		return $offset;
+	}
+	
+	public function __toString()
+	{
+	    return
+            "ImageId: "             . $this->getImageIdLength() . "\n" .
+            "Color Map Type: "      . $this->getColorMapType() . "\n" .
+            "Image Type Code: "     . $this->getImageTypeCode() . "\n" .
+            "Color Map Offset: "    . $this->getColorMapStart() . "\n" .
+            "Color Map Length: "    . $this->getColorMapLength() . "\n" .
+            "Color Map Depth: "     . $this->getColorMapDepth() . "\n" .
+            "X Offset: "            . $this->getXOffset() . "\n" .
+            "Y Offset: "            . $this->getYOffset() . "\n" .
+            "Width: "               . $this->getWidth() . "\n" .
+            "Height: "              . $this->getHeight() . "\n" .
+            "Pixel Depth: "         . $this->getPixelDepth() . "\n" .
+            "Image Descriptor: "    . $this->getImageDescriptor() . "\n";
 	}
 
 	// The minimum filesize based on the TGA 1 standard
