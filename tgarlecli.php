@@ -12,6 +12,8 @@ TgaRleCli::execute();
 
 class TgaRleCli
 {
+    // main commandline execution for encoding / decoding individual files
+    // or directories.
     public static function execute()
     {
         global $argv;
@@ -49,17 +51,27 @@ class TgaRleCli
         }
     }
     
+    // Command line help. Given when incorrect parameters are used.
     private static function commandHelp()
     {
         return
         $this->formatUsage("php tgarle.phar [OPTION] [FILE]") .
-        $this->formatDescription("Encodes or decodes TGA 1 and TGA 2 runlength encoded images which are either RBG, Grayscale or Color Mapped.") .
-        $this->formatOption("Encode a single TGA file from its uncompressed form.", "e", "encode") .
-        $this->formatOption("Decode a single TGA file from its compressed form.", "d", "decode") .
-        $this->formatOption("Encode TGA files in the given directory.", "E", "encodedir") .
-        $this->formatOption("Decode TGA files in the given directory.", "D", "decodedir") . "\n";
+        $this->formatDescription(
+            "Encodes or decodes TGA 1 and TGA 2 runlength encoded images " .
+            "which are either RBG, Grayscale or Color Mapped.") .
+        $this->formatOption(
+            "Encode a single TGA file from its uncompressed form.",
+            "e", "encode") .
+        $this->formatOption(
+            "Decode a single TGA file from its compressed form.",
+            "d", "decode") .
+        $this->formatOption("Encode TGA files in the given directory.",
+            "E", "encodedir") .
+        $this->formatOption("Decode TGA files in the given directory.",
+            "D", "decodedir") . "\n";
     }
     
+    // Formatting functions.
     private static function formatUsage($usage)
     {
         return wordwrap("Usage: " . $usage, 80) . "\n";
@@ -76,17 +88,20 @@ class TgaRleCli
     
         if ($longOption == "")
         {
-            $option = sprintf("  -%1.1s,%-24s%-51s\n", $shortOption, "", $descriptionLines[0]);
+            $option = sprintf("  -%1.1s,%-24s%-51s\n", $shortOption, "",
+                $descriptionLines[0]);
         }
         else
         {
             if (strlen($longOption) > 19)
             {
-                $option = sprintf("  -%1.1s, --%-72s\n%-29s%-51s\n", $shortOption, $longOption, "", $descriptionLines[0]);
+                $option = sprintf("  -%1.1s, --%-72s\n%-29s%-51s\n",
+                    $shortOption, $longOption, "", $descriptionLines[0]);
             }
             else
             {
-                $option = sprintf("  -%1.1s, --%-21s%-51s\n", $shortOption, $longOption, $descriptionLines[0]);
+                $option = sprintf("  -%1.1s, --%-21s%-51s\n", $shortOption,
+                    $longOption, $descriptionLines[0]);
             }
         }
     
@@ -101,9 +116,5 @@ class TgaRleCli
         return $option;
     }
 }
-
-
-
-
 
 ?>
