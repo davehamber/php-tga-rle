@@ -20,16 +20,19 @@ class TGARunLengthEncoder
 	private $output = true;
 	private $html = false;
 	
+	// Adds html <br/> tags to end of output lines
 	public function htmlBreaks()
 	{
 	    $this->html = true;
 	}
 	
+	// Turns off all output and error reporting
 	public function outputOff()
 	{
 	    $this->output = false;
 	}
 	
+	// Sets the input directory file path
 	public function setPath($path)
 	{
 		if (is_dir($path))
@@ -41,6 +44,7 @@ class TGARunLengthEncoder
 		return false;
 	}
 	
+	// Sets the input file name, if a path is included then that is also set
 	public function setFileName($fileName)
 	{
 		$this->fileName = basename($fileName);
@@ -53,6 +57,7 @@ class TGARunLengthEncoder
 		}
 	}
 	
+	// Encodes all TGA files in the given input directory if not already set
 	public function encodeDir($filePath = ".")
 	{
 	    if ($filePath == null)
@@ -62,7 +67,8 @@ class TGARunLengthEncoder
 	    
 	    if (!$this->setPath($filePath))
 	    {
-	        $this->output("Cannot encode directory, the given directory is not valid.");
+	        $this->output(
+                "Cannot encode directory, the given directory is not valid.");
 	        return;
 	    }
 	    
@@ -74,7 +80,8 @@ class TGARunLengthEncoder
 	        $this->output($e->getMessage());
 	    }
 	}
-	
+
+	// Decodes all TGA files in the given input directory if not already set
 	public function decodeDir($filePath = ".")
 	{
 	    if ($filePath == null)
@@ -84,7 +91,8 @@ class TGARunLengthEncoder
 	     
 	    if (!$this->setPath($filePath))
 	    {
-	        $this->output("Cannot decode directory, the given directory is not valid.");
+	        $this->output(
+                "Cannot decode directory, the given directory is not valid.");
 	        return;
 	    }
 	     
@@ -97,6 +105,8 @@ class TGARunLengthEncoder
 	    }
 	}
 	
+	// Encodes an individual file name. The path can be in the same string as
+	// the file name or as a seperate path parameter.
 	public function encodeFile($fileName = null, $filePath = null)
 	{
 		if ($filePath != null)
@@ -117,7 +127,9 @@ class TGARunLengthEncoder
 		    $this->output($e->getMessage());
 		}
 	}
-	
+
+	// Decodes an individual file name. Like above, the path can be in the same
+	// string as the file name or as a seperate path parameter.
 	public function decodeFile($fileName = null, $filePath = null)
 	{
 		if ($filePath != null)
@@ -139,6 +151,10 @@ class TGARunLengthEncoder
 		}
 	}
 	
+	// Using the input file name, the name created tries to label output files
+	// with the same name but adding either .encoded.tga or .decoded.tga
+	//
+	//TODO: Add explicit output naming
 	private function getOutputFileName($encoding)
 	{
 		$matches = null;
@@ -161,6 +177,9 @@ class TGARunLengthEncoder
 		return $matches[1] . $extension;
 	}
 	
+	// Loops through a valid directory en/decoding any tga files
+	// Within. Currently output goes to the same directory but
+	// with renamed files.
 	private function encodeDecodeDirectory($encodeMode)
 	{
 	    if (!is_dir($this->path))
@@ -187,20 +206,23 @@ class TGARunLengthEncoder
 					{
 					    if ($encodeMode)
 					    {
-					        $this->output("Could not encode $currentFile: " . $e->getMessage());
+					        $this->output("Could not encode $currentFile: " .
+                                $e->getMessage());
 					    }
 					    else
 					    {
-                            $this->output("Could not decode $currentFile: " . $e->getMessage());
+                            $this->output("Could not decode $currentFile: " .
+                                $e->getMessage());
 					    }
 					}
-					
 				}
 			}
 		}
 		closedir($handle);
 	}
 	
+	// Loads TGA header, any image descriptor, any color map table and also the
+	// TGA footer.
 	private function loadData($fileName, $encode)
 	{
 		if (!file_exists($fileName))
@@ -232,10 +254,15 @@ class TGARunLengthEncoder
 		
 		if ($this->fileHeader->getColorMapType() == 1)
 		{
-            $this->colorMap = fread($h, $this->fileHeader->getColorMapByteSize());
+            $this->colorMap = fread($h,
+                $this->fileHeader->getColorMapByteSize());
 		}
 		
-		if ($fileSize >= TGAHeader::TGA_HEADER_SIZE + TGAHeader::TGA_FOOTER_SIZE)
+		$headerAndFooterSize =
+            TGAHeader::TGA_HEADER_SIZE +
+            TGAHeader::TGA_FOOTER_SIZE;
+		
+		if ($fileSize >= $headerAndFooterSize)
 		{
 		    fseek($h, -TGAHeader::TGA_FOOTER_SIZE, SEEK_END);
 		    $this->fileFooter = fread($h, TGAHeader::TGA_FOOTER_SIZE);
@@ -249,9 +276,12 @@ class TGARunLengthEncoder
 		fclose($h);
 	}
 
+    // Checks file header is present and that the image type is valid,
+    // then proceeds to either encode or decode the file
 	private function encodeDecodeFile($encode)
 	{
-		$this->output("Attempting to load data for " . $this->path . "/" . $this->fileName);
+		$this->output("Attempting to load data for " .
+            $this->path . "/" . $this->fileName);
 		
 		try {
 		    $this->loadData($this->path . "/" . $this->fileName, $encode);
@@ -264,7 +294,8 @@ class TGARunLengthEncoder
 		
 		if ($this->fileHeader == null)
 		{
-			throw new Exception("Cannot encode or decode current file, file header is missing.");
+			throw new Exception("Cannot encode or decode current file, " .
+                "file header is missing.");
 		}
 
 		switch ($this->fileHeader->getImageTypeCode())
@@ -297,6 +328,8 @@ class TGARunLengthEncoder
 		}			
 	}
 
+    // Reads and encodes raw image data from input file and changes the
+    // image type in the header.
 	private function encodeTga()
 	{
 		
@@ -306,18 +339,22 @@ class TGARunLengthEncoder
 		{
 		    case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB:
 		        // Set the image type to compressed RGB.
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_RGB);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_RLE_RGB);
 		        break;
 		    case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE:
 		        // Set the image type to compressed black and white.
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE);
 		        break;
 		    case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED:
 		        // Set the image type to compressed color mapped.
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED);
 		        break;
 		    default:
-		        throw new Exception("No suitable unencoded image type in header");
+		        throw new Exception(
+                    "No suitable unencoded image type in header");
 		}
 		
 		$pixelDepth = $this->fileHeader->getBytePixelDepth();
@@ -345,14 +382,16 @@ class TGARunLengthEncoder
 				$pointer = ($y * $width * $pixelDepth) + ($x * $pixelDepth);
 				$currentPixel = substr($fileData, $pointer, $pixelDepth);
 				
-				// set the next pixel to null if we are at the end of the scan line
+				// set the next pixel to null if we are at the
+				// end of the scan line
 				if ($x == $width - 1)
 				{
 					$nextPixel = null;
 				}
 				else
 				{
-					$nextPixel = substr($fileData, $pointer + $pixelDepth, $pixelDepth);
+					$nextPixel =
+                        substr($fileData, $pointer + $pixelDepth, $pixelDepth);
 				}
 				
 				// our pixel is the same as the next pixel
@@ -438,6 +477,8 @@ class TGARunLengthEncoder
 		$this->createNewFile(true, $newData);
 	}
 	
+	// Reads and decodes encoded image data from input file and changes the
+	// image type in the header
 	private function decodeTga()
 	{
 		$this->output("Decoding: $this->fileName");
@@ -446,14 +487,17 @@ class TGARunLengthEncoder
 		{
 		    case TGAHeader::IMAGE_TYPE_RLE_RGB:
 		        // Set the image type to uncompressed RGB.
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB);
 		        break;
 		    case TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE:
 		        // Set the image type to uncompressed black and white.
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE);
 		        break;
 		    case TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED:
-		        $this->fileHeader->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED);
+		        $this->fileHeader->setImageTypeCode(
+                    TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED);
 		        break;
 		    default:
 		        throw new Exception("No suitable encoded image type in header");
@@ -481,9 +525,10 @@ class TGARunLengthEncoder
 
 			$packetHeader = ord($data[$pointer]);
 			
-			// the last bit of the packet header byte (128) indicates that the packet is encoded
-			// so if the unsigned value of the byte is greater than 127, it is encoded, we
-			// then get the number of the run of pixels by deducting 128 (the encode status bit).
+			// the last bit of the packet header byte (128) indicates that the
+			// packet is encoded so if the unsigned value of the byte is greater
+			// than 127, it is encoded, we then get the number of the run of
+			// pixels by deducting 128 (the encode status bit).
 			if ($packetHeader > 127)
 			{
 				// add the run of the same pixal to the data string
@@ -510,12 +555,15 @@ class TGARunLengthEncoder
 		
 		if (strlen($newData) != $dataLength)
 		{
-			throw new Exception("Decoded data is not correct length in file $this->fileName.");
+			throw new Exception(
+                "Decoded data is not correct length in file $this->fileName.");
 		}
 		
 		$this->createNewFile(false, $newData);
 	}
 	
+	// Commits encoded / decoded data to file in addition to the header, any
+	// image descriptor, any color table and the footer if present.
 	private function createNewFile($encoding, $newData)
 	{
 	    $newFileName = $this->getOutputFileName($encoding);
@@ -523,7 +571,9 @@ class TGARunLengthEncoder
 	    
 	    fwrite($h, $this->fileHeader->getHeaderData());
 	    
-	    if ($this->fileHeader->getImageIdLength() > 0 && strlen($this->imageId) == $this->fileHeader->getImageIdLength())
+	    $imageIdLen = $this->fileHeader->getImageIdLength();
+	    
+	    if ($imageIdLen > 0 && strlen($this->imageId) == $imageIdLen)
 	    {
 	        if (strlen($this->imageId) == $this->fileHeader->getImageIdLength())
 	        {
@@ -532,7 +582,8 @@ class TGARunLengthEncoder
 	        else
 	        {
 	            unlink($newFileName);
-	            throw new Exception("Image Id does not match length of image Id data.");
+	            throw new Exception(
+                    "Image Id does not match length of image Id data.");
 	        }
 	    }
 	    
@@ -545,13 +596,18 @@ class TGARunLengthEncoder
 	        else
 	        {
 	            unlink($newFileName);
-	            throw new Exception("Color Map declared but data is not present or wrong size.");
+	            throw new Exception(
+                    "Color Map declared but data is ".
+                    "not present or wrong size.");
 	        }
 	    }
 	    
 	    fwrite($h, $newData);
 	    
-	    if ($this->fileFooter != null && strlen($this->fileFooter) == TGAHeader::TGA_FOOTER_SIZE)
+	    $footerNotNull = ($this->fileFooter != null);
+	    $footerLen = strlen($this->fileFooter);
+	    
+	    if ($footerNotNull && $footerLen == TGAHeader::TGA_FOOTER_SIZE)
 	    {
 	        fwrite($h, $this->fileFooter);
 	    }
