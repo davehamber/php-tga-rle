@@ -207,7 +207,7 @@ class TGAHeader
 	// TGA2 has a 26 byte footer
 	public function getMinPossibleFileSize()
 	{
-		return $this->getDataStartOffset() + $this->getImageDataLength() + self::TGA_HEADER_SIZE;
+		return $this->getDataStartOffset() + $this->getImageDataLength();
 	}
 	
 	private function getWord($offset)
