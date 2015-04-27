@@ -6,6 +6,8 @@ use \Exception;
 class TGARunLengthEncoder
 {
 	const TGA_EXTENTION_MATCH = '/(.*?)\.?(encoded|decoded|)\.tga$/';
+	const LINE_END_CLI = "\n";
+	const LINE_END_HTML = "<br/>\n";
 	
 	private $fileHeader = null;
 	private $imageId = null;
@@ -14,6 +16,19 @@ class TGARunLengthEncoder
 	private $encodeFile = true;
 	private $path = ".";
 	private $fileName = "";
+	
+	private $output = true;
+	private $html = false;
+	
+	public function htmlBreaks()
+	{
+	    $this->html = true;
+	}
+	
+	public function outputOff()
+	{
+	    $this->output = false;
+	}
 	
 	public function setPath($path)
 	{
@@ -34,7 +49,7 @@ class TGARunLengthEncoder
 		
 		if ($path != '.')
 		{
-			$this->path = dirname($fileName);
+			$this->path = $path;
 		}
 	}
 	
@@ -45,12 +60,19 @@ class TGARunLengthEncoder
 	        $filePath = ".";
 	    }
 	    
-	    if (!$this->setPath($path))
+	    if (!$this->setPath($filePath))
 	    {
-	        throw new Exception("Cannot encode directory, the given directory is not valid.");
+	        $this->output("Cannot encode directory, the given directory is not valid.");
+	        return;
 	    }
 	    
-	    $this->encodeDecodeDirectory(true);
+	    try {
+            $this->encodeDecodeDirectory(true);
+	    }
+	    catch (Exception $e)
+	    {
+	        $this->output($e->getMessage());
+	    }
 	}
 	
 	public function decodeDir($filePath = ".")
@@ -60,12 +82,19 @@ class TGARunLengthEncoder
 	        $filePath = ".";
 	    }
 	     
-	    if (!$this->setPath($path))
+	    if (!$this->setPath($filePath))
 	    {
-	        throw new Exception("Cannot decode directory, the given directory is not valid.");
+	        $this->output("Cannot decode directory, the given directory is not valid.");
+	        return;
 	    }
 	     
-	    $this->encodeDecodeDirectory(false);
+        try {
+            $this->encodeDecodeDirectory(true);
+	    }
+	    catch (Exception $e)
+	    {
+	        $this->output($e->getMessage());
+	    }
 	}
 	
 	public function encodeFile($fileName = null, $filePath = null)
@@ -80,7 +109,13 @@ class TGARunLengthEncoder
 			$this->setFileName($fileName);
 		}
 		
-		$this->encodeDecodeFile(true);
+		try {
+            $this->encodeDecodeFile(true);
+		}
+		catch (Exception $e)
+		{
+		    $this->output($e->getMessage());
+		}
 	}
 	
 	public function decodeFile($fileName = null, $filePath = null)
@@ -95,7 +130,13 @@ class TGARunLengthEncoder
 			$this->setFileName($fileName);
 		}
 		
-		$this->encodeDecodeFile(false);
+		try {
+            $this->encodeDecodeFile(false);
+		}
+		catch (Exception $e)
+		{
+		    $this->output($e->getMessage());
+		}
 	}
 	
 	private function getOutputFileName($encoding)
@@ -124,17 +165,17 @@ class TGARunLengthEncoder
 	{
 	    if (!is_dir($this->path))
 	    {
-	        
+	        throw new Exception("Path provided is not valid.");
 	    }
 	    
 		if (!($handle = opendir($this->path)))
 		{
-			return;
+			throw new Exception("Could not open directory.");
 		}
 		
 		while (($currentFile = readdir($handle)) !== false)
 		{
-			if (filetype($this->path . "/" . $currentfile) == 'file')
+			if (filetype($this->path . "/" . $currentFile) == 'file')
 			{
 				if (preg_match(self::TGA_EXTENTION_MATCH, $currentFile))
 				{
@@ -146,11 +187,11 @@ class TGARunLengthEncoder
 					{
 					    if ($encodeMode)
 					    {
-					        echo "Could not encode $currentFile";
+					        $this->output("Could not encode $currentFile: " . $e->getMessage());
 					    }
 					    else
 					    {
-                            echo "Could not decode $currentFile";
+                            $this->output("Could not decode $currentFile: " . $e->getMessage());
 					    }
 					}
 					
@@ -175,12 +216,13 @@ class TGARunLengthEncoder
 		$h = fopen($fileName, 'r');
 		$headerData = fread($h, TGAHeader::TGA_HEADER_SIZE);
 		
-		$this->fileHeader = new TGAHeader($headerData);
-		
-		if ($encode && $fileSize < $this->fileHeader->getMinPossibleFileSize())
+		try
 		{
-			fclose($h);
-			throw new Exception("File size is too small for date specified in header! File size is:$fileSize and min pos is " . $this->fileHeader->getMinPossibleFileSize());
+		  $this->fileHeader = new TGAHeader($headerData);
+		}
+		catch (Exception $e)
+		{
+		    throw new Exception($e->getMessage());
 		}
 		
 		if ($this->fileHeader->getImageIdLength() > 0)
@@ -197,7 +239,7 @@ class TGARunLengthEncoder
 		{
 		    fseek($h, -TGAHeader::TGA_FOOTER_SIZE, SEEK_END);
 		    $this->fileFooter = fread($h, TGAHeader::TGA_FOOTER_SIZE);
-		    print '"' . substr($this->fileFooter, 8, 18) . '"';
+
 		    if (substr($this->fileFooter, 8, 18) != TGAHeader::TGA_FOOTER_SIGNATURE)
 		    {
 		        $this->fileFooter = null;
@@ -205,21 +247,18 @@ class TGARunLengthEncoder
 		}
 		
 		fclose($h);
-		
-		print $this->fileHeader->__toString();
 	}
 
 	private function encodeDecodeFile($encode)
 	{
-		print $this->path . "/" . $this->fileName . "\n";
+		$this->output("Attempting to load data for " . $this->path . "/" . $this->fileName);
 		
 		try {
 		    $this->loadData($this->path . "/" . $this->fileName, $encode);
 		}
 		catch (Exception $e)
 		{
-		    //throw $e;
-		    return;
+		    throw new Exception($e->getMessage());
 		}
 		
 		
@@ -235,7 +274,7 @@ class TGARunLengthEncoder
 			case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED:
 				if (!$encode)
 				{
-					throw new Exception("$this->fileName is already decoded\n");
+					throw new Exception("$this->fileName is already decoded.");
 				}
 				else
 				{
@@ -248,7 +287,7 @@ class TGARunLengthEncoder
 			case TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED:			
 				if ($encode)
 				{
-					throw new Exception("$this->fileName is already encoded\n");
+					throw new Exception("$this->fileName is already encoded.");
 				}
 				else
 				{
@@ -261,7 +300,7 @@ class TGARunLengthEncoder
 	private function encodeTga()
 	{
 		
-		print "Encoding: $this->fileName\n";
+		$this->output("Encoding: $this->fileName");
 				
 		switch ($this->fileHeader->getImageTypeCode())
 		{
@@ -401,7 +440,7 @@ class TGARunLengthEncoder
 	
 	private function decodeTga()
 	{
-		print "Decoding: $this->fileName\n";
+		$this->output("Decoding: $this->fileName");
 		
 		switch ($this->fileHeader->getImageTypeCode())
 		{
@@ -427,10 +466,8 @@ class TGARunLengthEncoder
 		$height = $this->fileHeader->getWidth();
 		
 		$dataLength = $this->fileHeader->getImageDataLength();
-				
-		print "pixel depth:$pixelDepth, width:$width, height:$height, datalength:$dataLength\n";
 
-		$h = fopen($this->fileName, 'r');
+		$h = fopen($this->path . "/" . $this->fileName, 'r');
 		fseek($h, $this->fileHeader->getDataStartOffset());
 		$data = fread($h, $dataLength);
 		fclose($h);
@@ -482,7 +519,7 @@ class TGARunLengthEncoder
 	private function createNewFile($encoding, $newData)
 	{
 	    $newFileName = $this->getOutputFileName($encoding);
-	    $h = fopen($newFileName, 'w');
+	    $h = fopen($this->path . "/" . $newFileName, 'w');
 	    
 	    fwrite($h, $this->fileHeader->getHeaderData());
 	    
@@ -521,6 +558,25 @@ class TGARunLengthEncoder
 
 	    fclose($h);
 	}
+	
+	private function output($outputString)
+	{
+        if (!$this->output)
+        {
+            return;
+        }
+    
+        if ($this->html)
+        {
+            $outputString .= self::LINE_END_HTML;
+        }
+        else
+        {
+            $outputString .= self::LINE_END_CLI;
+        }
+            
+        print $outputString;
+	}	
 }
 
 ?>
