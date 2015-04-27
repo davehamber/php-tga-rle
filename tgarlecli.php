@@ -28,10 +28,7 @@ class TgaRleCli
         $file = $argv[2];
     
         $encoder = new TGARunLengthEncoder();
-        $encoder->htmlBreaks();
-        $encoder->outputOff();
-       
-    
+   
         switch ($option)
         {
             case '-e':
