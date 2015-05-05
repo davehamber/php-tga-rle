@@ -19,7 +19,7 @@ class TGADataDecoder
         $pointer = 0;
         $outputData = "";
         
-        while (strlen($imageData) != $this->dataLength || $pointer >= strlen($imageData)) {
+        while (strlen($outputData) != $this->dataLength || $pointer >= strlen($imageData)) {
             $packetHeader = ord($imageData[$pointer]);
             $packetCounter = $packetHeader % self::ENCODED_BIT + 1;
             
