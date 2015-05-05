@@ -1,27 +1,28 @@
 <?php
 
 namespace DaveHamber\ImageFormats\TGA;
+
 use \Exception;
 
 class TGAHeader
 {
     const TGA_HEADER_SIZE = 18;
     const TGA_FOOTER_SIZE = 26;
-    const TGA_FOOTER_SIGNATURE = "TRUEVISION-XFILE.\0"; 
+    const TGA_FOOTER_SIGNATURE = "TRUEVISION-XFILE.\0";
     const BYTE = 8;
 
-    const ID_LENGTH = 0;		/* 00h Byte - Size of Image ID field */
-    const COLOR_MAP_TYPE = 1;	/* 01h Byte - Color map type */
-    const IMAGE_TYPE_CODE = 2;	/* 02h Byte - Image type code */
-    const C_MAP_START = 3;      /* 03h Word - Color map origin */
-    const C_MAP_LENGTH = 5;		/* 05h Word - Color map length */
-    const C_MAP_DEPTH = 7;		/* 07h Byte Depth of color map entries */
-    const X_OFFSET	= 8;        /* 08h Word - X origin of image */
-    const Y_OFFSET = 10;        /* 0Ah Word - Y origin of image */
-    const WIDTH = 12;           /* 0Ch Word - Width of image */
-    const HEIGHT = 14;          /* 0Eh Word - Height of image */
-    const PIXEL_DEPTH = 16;     /* 10h Byte - Image pixel size */
-    const IMAGE_DESCRIPTOR = 17;/* 11h Byte - Image descriptor byte */
+    const ID_LENGTH = 0;         /* 00h Byte - Size of Image ID field */
+    const COLOR_MAP_TYPE = 1;    /* 01h Byte - Color map type */
+    const IMAGE_TYPE_CODE = 2;   /* 02h Byte - Image type code */
+    const C_MAP_START = 3;       /* 03h Word - Color map origin */
+    const C_MAP_LENGTH = 5;      /* 05h Word - Color map length */
+    const C_MAP_DEPTH = 7;       /* 07h Byte Depth of color map entries */
+    const X_OFFSET = 8;          /* 08h Word - X origin of image */
+    const Y_OFFSET = 10;         /* 0Ah Word - Y origin of image */
+    const WIDTH = 12;            /* 0Ch Word - Width of image */
+    const HEIGHT = 14;           /* 0Eh Word - Height of image */
+    const PIXEL_DEPTH = 16;      /* 10h Byte - Image pixel size */
+    const IMAGE_DESCRIPTOR = 17; /* 11h Byte - Image descriptor byte */
 
     // 0 - No image data included.
     const IMAGE_TYPE_NO_IMAGE_DATA = 0;
@@ -47,26 +48,49 @@ class TGAHeader
     // 32 - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.
     const IMAGE_TYPE_HD_RLE_COLOR_MAPPED = 32;
 
-    // 33 - Compressed color-mapped data, using Huffman, Delta, and runlength encoding.  4-pass quadtree-type process.
+    // 33 - Compressed color-mapped data, using Huffman, Delta,
+    // and runlength encoding.  4-pass quadtree-type process.
     const IMAGE_TYPE_HD_RLE_4PASS_COLOR_MAPPED = 33;
 
     private $tgaHeader = "";
 
-    function __construct($tgaHeader)
+    public function __construct($tgaHeader)
     {
-        if (!is_string($tgaHeader))
-        {
+        if (!is_string($tgaHeader)) {
             throw new Exception("TGA Header constructor requires given data type to be a string.");
         }
 
-        if (strlen($tgaHeader) != self::TGA_HEADER_SIZE)
-        {
+        if (strlen($tgaHeader) != self::TGA_HEADER_SIZE) {
             throw new Exception("TGA Header constructor given data is the wrong size.");
         }
 
         $this->tgaHeader = $tgaHeader;
     }
 
+    public function isEncodedType()
+    {
+        switch ($this->getImageTypeCode()){
+            case TGAHeader::IMAGE_TYPE_RLE_RGB:
+            case TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE:
+            case TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED:
+                return true;
+        }
+        
+        return false;
+    }
+    
+    public function isDecodedType()
+    {
+        switch ($this->getImageTypeCode()){
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB:
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE:
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED:
+                return true;
+        }
+        
+        return false;
+    }
+    
     // methods to get all of the header basic information
     public function getImageIdLength()
     {
@@ -85,15 +109,13 @@ class TGAHeader
     
     public function setImageTypeCode($imageType)
     {
-        if (!is_numeric($imageType))
-        {
+        if (!is_numeric($imageType)) {
             return;
         }
         
         $imageType = (int)$imageType;
         
-        if ($imageType > 255)
-        {
+        if ($imageType > 255) {
             return;
         }
         
@@ -178,12 +200,51 @@ class TGAHeader
 
         $offset += $this->getImageIdLength();
 
-        if ($this->getColorMapType() == 1)
-        {
+        if ($this->getColorMapType() == 1) {
             $offset += $this->getColorMapByteSize();
         }
         
         return $offset;
+    }
+    
+    public function switchToEncodedType()
+    {
+        switch ($this->getImageTypeCode()) {
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB:
+                // Set the image type to compressed RGB.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_RGB);
+                return true;
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE:
+                // Set the image type to compressed black and white.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE);
+                return true;
+            case TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED:
+                // Set the image type to compressed color mapped.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED);
+                return true;
+        }
+        
+        return false;
+    }
+    
+    public function switchToDecodedType()
+    {
+        switch ($this->getImageTypeCode()) {
+            case TGAHeader::IMAGE_TYPE_RLE_RGB:
+                // Set the image type to compressed RGB.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_RGB);
+                return true;
+            case TGAHeader::IMAGE_TYPE_RLE_BLACK_AND_WHITE:
+                // Set the image type to compressed black and white.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_BLACK_AND_WHITE);
+                return true;
+            case TGAHeader::IMAGE_TYPE_RLE_COLOR_MAPPED:
+                // Set the image type to compressed color mapped.
+                $this->setImageTypeCode(TGAHeader::IMAGE_TYPE_UNCOMPRESSED_COLOR_MAPPED);
+                return true;
+        }
+    
+        return false;
     }
     
     public function __toString()
@@ -215,5 +276,3 @@ class TGAHeader
         return ord($this->tgaHeader[$offset]) + (ord($this->tgaHeader[$offset + 1]) << self::BYTE);
     }
 }
-
-?>
