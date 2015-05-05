@@ -8,7 +8,6 @@ class TGAFileRle
 {
     private $inputFileName = null;
     private $outputFileName = null;
-    
     private $fileHeader = null;
     private $imageId = null;
     private $colorMap = null;
@@ -60,7 +59,6 @@ class TGAFileRle
             } else {
                 $this->decodeTga();
             }
-            break;
         }
     }
 
@@ -146,7 +144,7 @@ class TGAFileRle
         $dataLength = $this->fileHeader->getImageDataLength();
     
         // Fetch data from offset
-        $handle = fopen($this->path . "/" . $this->inputFileName, 'r');
+        $handle = fopen($this->inputFileName, 'r');
         fseek($handle, $this->fileHeader->getDataStartOffset());
         $fileData = fread($handle, $dataLength);
         fclose($handle);
@@ -175,7 +173,7 @@ class TGAFileRle
             if (strlen($this->imageId) == $this->fileHeader->getImageIdLength()) {
                 fwrite($handle, $this->imageId);
             } else {
-                unlink($newFileName);
+                unlink($this->outputFileName);
                 throw new Exception("Image Id does not match length of image Id data.");
             }
         }
@@ -184,7 +182,7 @@ class TGAFileRle
             if (strlen($this->colorMap) == $this->fileHeader->getColorMapByteSize()) {
                 fwrite($handle, $this->colorMap);
             } else {
-                unlink($newFileName);
+                unlink($this->outputFileName);
                 throw new Exception("Color Map declared but data is not present or wrong size.");
             }
         }
