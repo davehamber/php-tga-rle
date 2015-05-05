@@ -131,7 +131,7 @@ class TGARunLengthEncoder
     }
     
     // Encodes all TGA files in the given input directory if not already set
-    public function encodeDir($filePath = ".", $outPath = ".")
+    public function encodeDir($filePath = ".", $outPath = null)
     {
         try {
             $this->encodeDecodeDirectory(true, $filePath, $outPath);
@@ -141,7 +141,7 @@ class TGARunLengthEncoder
     }
     
     // Decodes all TGA files in the given input directory if not already set
-    public function decodeDir($filePath = ".", $outPath = ".")
+    public function decodeDir($filePath = ".", $outPath = null)
     {
         try {
             $this->encodeDecodeDirectory(false, $filePath, $outPath);
@@ -159,6 +159,12 @@ class TGARunLengthEncoder
             throw new Exception("Input path provided is not valid.");
         }
         
+        // If no output path exists, make it the same as the input path.
+        if ($outPath == null)
+        {
+            $outPath = $filePath;
+        }
+        
         if (! is_dir($outPath)) {
             throw new Exception("Output path provided is not valid.");
         }
@@ -168,11 +174,11 @@ class TGARunLengthEncoder
         }
         
         while (($currentFile = readdir($handle)) !== false) {
-            if (filetype($this->path . "/" . $currentFile) == 'file') {
+            if (filetype($filePath . "/" . $currentFile) == 'file') {
                 if (preg_match(self::TGA_EXTENTION_MATCH, $currentFile)) {
                     $this->encodeDecodeFile(
                         $encodeMode,
-                        $this->path . "/" . $currentFile,
+                        $filePath . "/" . $currentFile,
                         $outPath
                     );
                     
