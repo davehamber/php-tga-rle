@@ -1,0 +1,17 @@
+{
+    "name": "davehamber/php-tga-rle",
+    "description": "A PHP based TGA run length encoder / decoder",
+    "authors": [
+        {
+            "name": "Dave Hamber",
+            "email": "dave.hamber@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {},
+    "autoload": {
+        "psr-4": {
+            "DaveHamber\\ImageFormats\\TGA\\": "src"
+        }
+    }
+}
