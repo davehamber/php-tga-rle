@@ -14,7 +14,7 @@ class TGARleCli
         {
             case 1:
             case 2:
-                print self::commandHelp();
+                print TGARleCli::commandHelp();
                 exit(0);
         }
 
@@ -38,13 +38,13 @@ class TGARleCli
                 $encoder->decodeDir($file);
                 break;
             default:
-                print commandHelp();
+                print TGARleCli::commandHelp();
                 exit(0);
         }
     }
 
     // Command line help. Given when incorrect parameters are used.
-    private function commandHelp()
+    private static function commandHelp()
     {
         return
         TGARleCli::formatUsage("php tgarle.phar [OPTION] [FILE]") .
@@ -75,17 +75,17 @@ class TGARleCli
     }
 
     // Formatting functions.
-    private function formatUsage($usage)
+    private static function formatUsage($usage)
     {
         return wordwrap("Usage: " . $usage, 80) . "\n";
     }
 
-    private function formatDescription($description)
+    private static function formatDescription($description)
     {
         return wordwrap($description, 80) . "\n\n";
     }
 
-    private function formatOption($description, $shortOption, $longOption = "")
+    private static function formatOption($description, $shortOption, $longOption = "")
     {
         $descriptionLines = explode("\n", wordwrap($description, 51));
 
